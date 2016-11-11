@@ -450,10 +450,12 @@ namespace itk {
 			numberOfTargetModalities = this->m_TargetImage.size() / this->m_timePoints;
 		}
 
-		MatrixType absoluteAtlasPatchDifferences(this->m_NumberOfAtlases,
-			this->m_PatchNeighborhoodSize * numberOfTargetModalities);
+		SizeValueType numberOfTimePoints = this->m_timePoints;
 
-		MatrixType originalAtlasPatchIntensities(this->m_NumberOfAtlases,
+		MatrixType absoluteAtlasPatchDifferences(this->m_NumberOfAtlases * numberOfTimePoints,
+			this->m_PatchNeighborhoodSize * numberOfTargetModalities );
+
+		MatrixType originalAtlasPatchIntensities(this->m_NumberOfAtlases * numberOfTimePoints,
 			this->m_PatchNeighborhoodSize * this->m_NumberOfAtlasModalities);
 
 		std::vector<SizeValueType> minimumAtlasOffsetIndices(this->m_NumberOfAtlases);
@@ -636,14 +638,51 @@ namespace itk {
 				}
 			}
 			else {
-				InputImagePixelVectorType2D normalizedTargetPatch;
+				InputImagePixelVectorType2D normalizedTargetPatch2D;
 				for (SizeValueType o = 0; o < this->m_timePoints; o++) {
 					InputImageList tmp_TargetImage;
 					tmp_TargetImage.push_back(this->m_TargetImage[o]);
-					normalizedTargetPatch.push_back(this->VectorizeImageListPatch(tmp_TargetImage, currentCenterIndex, true));
+					normalizedTargetPatch2D.push_back(this->VectorizeImageListPatch(tmp_TargetImage, currentCenterIndex, true));
 				}
-				InputImagePixelVectorType tmp0 = normalizedTargetPatch[0];
-				InputImagePixelVectorType tmp1 = normalizedTargetPatch[1];
+				//InputImagePixelVectorType tmp0 = normalizedTargetPatch[0];
+				//InputImagePixelVectorType tmp1 = normalizedTargetPatch[1];
+				InputImagePixelVectorType normalizedTargetPatch;
+
+
+				absoluteAtlasPatchDifferences.fill(0.0);
+				originalAtlasPatchIntensities.fill(0.0);
+
+				for (SizeValueType h = 0; h < this->m_timePoints; h++)
+				{
+					normalizedTargetPatch = normalizedTargetPatch2D[h];
+					
+					for (SizeValueType i = 0; i < this->m_NumberOfAtlases; i++)
+					{
+						RealType minimumPatchSimilarity = NumericTraits<RealType>::max();
+						SizeValueType minimumPatchOffsetIndex = 0;
+
+						for (SizeValueType j = 0; j < searchNeighborhoodSize; j++)
+						{
+							IndexType searchIndex = currentCenterIndex + searchNeighborhoodOffsetList[j];
+
+							if (!output->GetRequestedRegion().IsInside(searchIndex))
+							{
+								continue;
+							}
+
+							RealType patchSimilarity = this->ComputeNeighborhoodPatchSimilarity(
+								this->m_AtlasImages[i], searchIndex, normalizedTargetPatch, useOnlyFirstAtlasImage);
+
+							if (patchSimilarity < minimumPatchSimilarity)
+							{
+								minimumPatchSimilarity = patchSimilarity;
+								minimumPatchOffsetIndex = j;
+							}
+						}
+
+					}
+				}
+
 			}
 
 			// Compute the weights by solving for the inverse of Mx
