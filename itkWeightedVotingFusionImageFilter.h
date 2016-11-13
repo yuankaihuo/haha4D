@@ -103,6 +103,7 @@ public:
   typedef typename ProbabilityImageType::Pointer     ProbabilityImagePointer;
 
   typedef double                                     RealType;
+  typedef std::vector<double>						 RealType2D;
   typedef std::vector<int>                           OffsetList;
 
   typedef vnl_matrix<RealType>                       MatrixType;

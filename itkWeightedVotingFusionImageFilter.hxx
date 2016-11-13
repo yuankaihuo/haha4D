@@ -452,10 +452,10 @@ namespace itk {
 
 		SizeValueType numberOfTimePoints = this->m_timePoints;
 
-		MatrixType absoluteAtlasPatchDifferences(this->m_NumberOfAtlases * numberOfTimePoints,
+		MatrixType absoluteAtlasPatchDifferences(this->m_NumberOfAtlases ,
 			this->m_PatchNeighborhoodSize * numberOfTargetModalities );
 
-		MatrixType originalAtlasPatchIntensities(this->m_NumberOfAtlases * numberOfTimePoints,
+		MatrixType originalAtlasPatchIntensities(this->m_NumberOfAtlases ,
 			this->m_PatchNeighborhoodSize * this->m_NumberOfAtlasModalities);
 
 		std::vector<SizeValueType> minimumAtlasOffsetIndices(this->m_NumberOfAtlases);
@@ -655,8 +655,13 @@ namespace itk {
 				for (SizeValueType h = 0; h < this->m_timePoints; h++)
 				{
 					normalizedTargetPatch = normalizedTargetPatch2D[h];
-					
-					for (SizeValueType i = 0; i < this->m_NumberOfAtlases; i++)
+					SizeValueType startInd = (this->m_NumberOfAtlases/this->m_timePoints)*h;
+					SizeValueType endInd = (this->m_NumberOfAtlases/this->m_timePoints)*(h+1);
+
+					RealType2D minimumPatchSimilarity2D;
+					std::vector<SizeValueType> minimumPatchOffsetIndex2D;
+
+					for (SizeValueType i = startInd; i < endInd; i++)
 					{
 						RealType minimumPatchSimilarity = NumericTraits<RealType>::max();
 						SizeValueType minimumPatchOffsetIndex = 0;
@@ -679,7 +684,84 @@ namespace itk {
 								minimumPatchOffsetIndex = j;
 							}
 						}
+						minimumPatchSimilarity2D.push_back(minimumPatchSimilarity);
+						minimumPatchOffsetIndex2D.push_back(minimumPatchOffsetIndex);
 
+						// Once the patch has been found, normalize it and then compute the absolute
+						// difference with target patch
+
+						IndexType minimumIndex = currentCenterIndex +
+							searchNeighborhoodOffsetList[minimumPatchOffsetIndex];
+
+						InputImagePixelVectorType normalizedMinimumAtlasPatch;
+
+						if (numberOfTargetModalities == this->m_NumberOfAtlasModalities)
+						{
+							normalizedMinimumAtlasPatch =
+								this->VectorizeImageListPatch(this->m_AtlasImages[i], minimumIndex, true);
+						}
+						else
+						{
+							normalizedMinimumAtlasPatch =
+								this->VectorizeImagePatch(this->m_AtlasImages[i][0], minimumIndex, true);
+						}
+
+						typename InputImagePixelVectorType::const_iterator itA = normalizedMinimumAtlasPatch.begin();
+						typename InputImagePixelVectorType::const_iterator itT = normalizedTargetPatch.begin();
+
+						while (itA != normalizedMinimumAtlasPatch.end())
+						{
+							RealType value = std::fabs(*itA - *itT);
+							absoluteAtlasPatchDifferences(i, itA - normalizedMinimumAtlasPatch.begin()) = value;
+
+							++itA;
+							++itT;
+						}
+
+						InputImagePixelVectorType originalMinimumAtlasPatch =
+							this->VectorizeImageListPatch(this->m_AtlasImages[i], minimumIndex, false);
+
+						typename InputImagePixelVectorType::const_iterator itO = originalMinimumAtlasPatch.begin();
+						while (itO != originalMinimumAtlasPatch.end())
+						{
+							originalAtlasPatchIntensities(i, itO - originalMinimumAtlasPatch.begin()) = *itO;
+							++itO;
+						}
+
+						minimumAtlasOffsetIndices[i] = minimumPatchOffsetIndex;
+
+
+					}
+				}
+
+				// Compute Mx values
+				for (SizeValueType i = 0; i < this->m_NumberOfAtlases; i++)
+				{
+					for (SizeValueType j = 0; j <= i; j++)
+					{
+						RealType mxValue = 0.0;
+
+						for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+						{
+							mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
+						}
+						mxValue /= static_cast<RealType>(this->m_PatchNeighborhoodSize - 1);
+
+						if (this->m_Beta == 2.0)
+						{
+							mxValue *= mxValue;
+						}
+						else
+						{
+							mxValue = std::pow(mxValue, this->m_Beta);
+						}
+
+						if (!std::isfinite(mxValue))
+						{
+							mxValue = 0.0;
+						}
+
+						Mx(i, j) = Mx(j, i) = mxValue;
 					}
 				}
 
