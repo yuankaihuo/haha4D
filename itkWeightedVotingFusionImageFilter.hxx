@@ -639,14 +639,32 @@ namespace itk {
 			}
 			else {
 				InputImagePixelVectorType2D normalizedTargetPatch2D;
+				MatrixType targetPatchDifferences(this->m_timePoints,
+					this->m_PatchNeighborhoodSize * numberOfTargetModalities);
+				InputImagePixelVectorType normalizedTargetPatch;
+
 				for (SizeValueType o = 0; o < this->m_timePoints; o++) {
 					InputImageList tmp_TargetImage;
 					tmp_TargetImage.push_back(this->m_TargetImage[o]);
-					normalizedTargetPatch2D.push_back(this->VectorizeImageListPatch(tmp_TargetImage, currentCenterIndex, true));
+					InputImagePixelVectorType tempPatch = this->VectorizeImageListPatch(tmp_TargetImage, currentCenterIndex, true);
+					normalizedTargetPatch2D.push_back(tempPatch);
+
+					InputImagePixelVectorType normalizedBaselineTargetPatch = normalizedTargetPatch2D[0];
+
+					//caculate the patch difference between atlases
+					typename InputImagePixelVectorType::const_iterator itB = normalizedBaselineTargetPatch.begin();
+					typename InputImagePixelVectorType::const_iterator itG = tempPatch.begin();
+
+					while (itB != normalizedBaselineTargetPatch.end())
+					{
+						RealType value = std::fabs(*itB - *itG);
+						targetPatchDifferences(o, itB - normalizedBaselineTargetPatch.begin()) = value;
+
+						++itB;
+						++itG;
+					}
 				}
-				//InputImagePixelVectorType tmp0 = normalizedTargetPatch[0];
-				//InputImagePixelVectorType tmp1 = normalizedTargetPatch[1];
-				InputImagePixelVectorType normalizedTargetPatch;
+	
 
 
 				absoluteAtlasPatchDifferences.fill(0.0);
@@ -739,26 +757,90 @@ namespace itk {
 				{
 					for (SizeValueType j = 0; j <= i; j++)
 					{
+						unsigned int i_timePoint = i / (this->m_NumberOfAtlases/this->m_timePoints);
+						unsigned int j_timePoint = j / (this->m_NumberOfAtlases/this->m_timePoints);
+
+
 						RealType mxValue = 0.0;
+						RealType tmxValue = 0.0;
 
-						for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+						if (i_timePoint == 0 && j_timePoint == 0) // atlases from same time point
 						{
-							mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
-						}
-						mxValue /= static_cast<RealType>(this->m_PatchNeighborhoodSize - 1);
+							for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+							{
+								mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
+							}
+							mxValue /= static_cast<RealType>(this->m_PatchNeighborhoodSize - 1);
 
-						if (this->m_Beta == 2.0)
-						{
-							mxValue *= mxValue;
-						}
-						else
-						{
-							mxValue = std::pow(mxValue, this->m_Beta);
-						}
+							if (this->m_Beta == 2.0)
+							{
+								mxValue *= mxValue;
+							}
+							else
+							{
+								mxValue = std::pow(mxValue, this->m_Beta);
+							}
 
-						if (!std::isfinite(mxValue))
-						{
-							mxValue = 0.0;
+							if (!std::isfinite(mxValue))
+							{
+								mxValue = 0.0;
+							}
+						}
+						else {
+							if (i_timePoint == 0) {
+								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+								{
+									tmxValue += targetPatchDifferences[j_timePoint][k] * targetPatchDifferences[j_timePoint][k];
+									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
+								}
+							}
+							else if (j_timePoint == 0) {
+								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+								{
+									tmxValue += targetPatchDifferences[i_timePoint][k] * targetPatchDifferences[i_timePoint][k];
+									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
+								}
+							}
+							else {
+								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
+								{
+									tmxValue += targetPatchDifferences[i_timePoint][k] * targetPatchDifferences[j_timePoint][k];
+									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
+								}
+							}
+							
+													
+							mxValue /= static_cast<RealType>(this->m_PatchNeighborhoodSize - 1);
+							tmxValue /= static_cast<RealType>(this->m_PatchNeighborhoodSize - 1);
+
+							if (this->m_Beta == 2.0)
+							{
+								mxValue *= mxValue;
+								tmxValue *= tmxValue;
+							}
+							else
+							{
+								mxValue = std::pow(mxValue, this->m_Beta);
+								tmxValue = std::pow(tmxValue, this->m_Beta);
+							}
+
+							if (!std::isfinite(mxValue))
+							{
+								mxValue = 0.0;
+							}
+							if (!std::isfinite(tmxValue))
+							{
+								tmxValue = 0.0;
+							}
+
+							//if not zero
+							if (mxValue != 0) {
+								RealType ratio_diffTarget_to_diffAtlas = tmxValue / mxValue;
+								RealType expValue = exp(3 * ratio_diffTarget_to_diffAtlas);
+								if (!std::isfinite(expValue)) {
+									expValue = 1000000;
+								}
+							}
 						}
 
 						Mx(i, j) = Mx(j, i) = mxValue;

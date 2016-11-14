@@ -80,7 +80,7 @@ public:
 
   typedef std::vector<InputImagePixelType>           InputImagePixelVectorType;
 
-  typedef std::vector<std::vector<InputImagePixelType>>   InputImagePixelVectorType2D;
+  typedef std::vector<std::vector<InputImagePixelType> >   InputImagePixelVectorType2D;
 
   typedef TOutputImage                               OutputImageType;
   typedef typename OutputImageType::PixelType        LabelType;
