@@ -836,20 +836,20 @@ namespace itk {
 							//if not zero
 							if (mxValue != 0){ 
 								RealType ratio_diffTarget_to_diffAtlas = tmxValue / mxValue;
-								RealType expValue = exp(3 * ratio_diffTarget_to_diffAtlas);
+								RealType expValue = exp(100 * ratio_diffTarget_to_diffAtlas);
 								if (!std::isfinite(expValue)) {
 									expValue = 1000000;
 								}
 
-								if (i_timePoint == 0) {
-									mxValue = mxValue;
-								}
-								else if (j_timePoint == 0) {
+
+								if (i_timePoint == 0 || j_timePoint == 0) {
 									mxValue = mxValue;
 								}
 								else {
-									mxValue = expValue;
+									mxValue = expValue*mxValue;
 								}
+
+
 							}
 						}
 
