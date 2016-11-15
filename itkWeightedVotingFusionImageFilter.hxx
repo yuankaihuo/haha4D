@@ -643,17 +643,21 @@ namespace itk {
 					this->m_PatchNeighborhoodSize * numberOfTargetModalities);
 				InputImagePixelVectorType normalizedTargetPatch;
 
+				targetPatchDifferences.fill(0.0);
+
+				InputImagePixelVectorType normalizedBaselineTargetPatch;
 				for (SizeValueType o = 0; o < this->m_timePoints; o++) {
 					InputImageList tmp_TargetImage;
 					tmp_TargetImage.push_back(this->m_TargetImage[o]);
 					InputImagePixelVectorType tempPatch = this->VectorizeImageListPatch(tmp_TargetImage, currentCenterIndex, true);
 					normalizedTargetPatch2D.push_back(tempPatch);
 
-					InputImagePixelVectorType normalizedBaselineTargetPatch = normalizedTargetPatch2D[0];
+					normalizedBaselineTargetPatch = normalizedTargetPatch2D[0];
 
 					//caculate the patch difference between atlases
 					typename InputImagePixelVectorType::const_iterator itB = normalizedBaselineTargetPatch.begin();
 					typename InputImagePixelVectorType::const_iterator itG = tempPatch.begin();
+									
 
 					while (itB != normalizedBaselineTargetPatch.end())
 					{
@@ -725,13 +729,13 @@ namespace itk {
 						}
 
 						typename InputImagePixelVectorType::const_iterator itA = normalizedMinimumAtlasPatch.begin();
-						typename InputImagePixelVectorType::const_iterator itT = normalizedTargetPatch.begin();
+						//typename InputImagePixelVectorType::const_iterator itT = normalizedTargetPatch.begin();
+						typename InputImagePixelVectorType::const_iterator itT = normalizedBaselineTargetPatch.begin(); //yuankai modified
 
 						while (itA != normalizedMinimumAtlasPatch.end())
 						{
 							RealType value = std::fabs(*itA - *itT);
 							absoluteAtlasPatchDifferences(i, itA - normalizedMinimumAtlasPatch.begin()) = value;
-
 							++itA;
 							++itT;
 						}
@@ -784,6 +788,9 @@ namespace itk {
 							if (!std::isfinite(mxValue))
 							{
 								mxValue = 0.0;
+							}
+							if (mxValue != 0) {
+								int testforfun = 1;
 							}
 						}
 						else {
@@ -838,18 +845,16 @@ namespace itk {
 								RealType ratio_diffTarget_to_diffAtlas = tmxValue / mxValue;
 								RealType expValue = exp(100 * ratio_diffTarget_to_diffAtlas);
 								if (!std::isfinite(expValue)) {
-									expValue = 1000000;
+									expValue = 1000.0;
 								}
 
 
-								if (i_timePoint == 0 || j_timePoint == 0) {
+/*								if (i_timePoint == 0 || j_timePoint == 0) {
 									mxValue = mxValue;
 								}
 								else {
 									mxValue = expValue*mxValue;
-								}
-
-
+								}			*/					
 							}
 						}
 
