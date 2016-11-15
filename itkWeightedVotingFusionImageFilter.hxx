@@ -676,7 +676,7 @@ namespace itk {
 
 				for (SizeValueType h = 0; h < this->m_timePoints; h++)
 				{
-					normalizedTargetPatch = normalizedTargetPatch2D[h];
+					normalizedTargetPatch = normalizedTargetPatch2D[0];
 					SizeValueType startInd = (this->m_NumberOfAtlases/this->m_timePoints)*h;
 					SizeValueType endInd = (this->m_NumberOfAtlases/this->m_timePoints)*(h+1);
 
