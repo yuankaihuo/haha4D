@@ -289,7 +289,7 @@ int antsJointFusion( itk::ants::CommandLineParser *parser )
     {
     if( targetImageOption->GetFunction( 0 )->GetNumberOfParameters() == 0 )
 	{
-		for (unsigned int m = 0; m < numberOfTargets; m++)
+		for (int m = numberOfTargets-1; m >=0; m--) // ta ma de dao xu
 		{
 			typename ImageType::Pointer targetImage = ITK_NULLPTR;
 
@@ -364,7 +364,7 @@ int antsJointFusion( itk::ants::CommandLineParser *parser )
     numberOfAtlasSegmentations = 0;
     }
 
-  for( unsigned int m = 0; m < numberOfAtlases; m++ )
+  for( int m = numberOfAtlases-1; m >= 0; m-- )
     {
     typename FusionFilterType::InputImageList atlasImageList;
     typename LabelImageType::Pointer atlasSegmentation = ITK_NULLPTR;

@@ -676,7 +676,7 @@ namespace itk {
 
 				for (SizeValueType h = 0; h < this->m_timePoints; h++)
 				{
-					normalizedTargetPatch = normalizedTargetPatch2D[0];
+					normalizedTargetPatch = normalizedTargetPatch2D[h];
 					SizeValueType startInd = (this->m_NumberOfAtlases/this->m_timePoints)*h;
 					SizeValueType endInd = (this->m_NumberOfAtlases/this->m_timePoints)*(h+1);
 
@@ -843,18 +843,21 @@ namespace itk {
 							//if not zero
 							if (mxValue != 0){ 
 								RealType ratio_diffTarget_to_diffAtlas = tmxValue / mxValue;
-								RealType expValue = exp(100 * ratio_diffTarget_to_diffAtlas);
+								RealType expValue = exp(1000 * ratio_diffTarget_to_diffAtlas);
 								if (!std::isfinite(expValue)) {
-									expValue = 1000.0;
+									expValue = 100;
 								}
 
-
-/*								if (i_timePoint == 0 || j_timePoint == 0) {
+								if (i_timePoint == 0 || j_timePoint == 0) {
 									mxValue = mxValue;
 								}
 								else {
 									mxValue = expValue*mxValue;
-								}			*/					
+								}		
+
+								if (mxValue > 100) {
+									mxValue = 100;
+								}
 							}
 						}
 
