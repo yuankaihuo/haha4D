@@ -797,14 +797,16 @@ namespace itk {
 							if (i_timePoint == 0) {
 								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
 								{
-									tmxValue += targetPatchDifferences[j_timePoint][k] * targetPatchDifferences[j_timePoint][k];
+									//tmxValue += targetPatchDifferences[j_timePoint][k] * targetPatchDifferences[j_timePoint][k];
+									tmxValue += targetPatchDifferences[j_timePoint];
 									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
 								}
 							}
 							else if (j_timePoint == 0) {
 								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
 								{
-									tmxValue += targetPatchDifferences[i_timePoint][k] * targetPatchDifferences[i_timePoint][k];
+									//tmxValue += targetPatchDifferences[i_timePoint][k] * targetPatchDifferences[i_timePoint][k];
+									tmxValue += targetPatchDifferences[i_timePoint][k];
 									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
 								}
 							}
