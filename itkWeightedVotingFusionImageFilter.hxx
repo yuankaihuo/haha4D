@@ -798,7 +798,7 @@ namespace itk {
 								for (unsigned int k = 0; k < this->m_PatchNeighborhoodSize * numberOfTargetModalities; k++)
 								{
 									//tmxValue += targetPatchDifferences[j_timePoint][k] * targetPatchDifferences[j_timePoint][k];
-									tmxValue += targetPatchDifferences[j_timePoint];
+									tmxValue += targetPatchDifferences[j_timePoint][k];
 									mxValue += absoluteAtlasPatchDifferences[i][k] * absoluteAtlasPatchDifferences[j][k];
 								}
 							}
